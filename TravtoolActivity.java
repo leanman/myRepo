@@ -66,9 +66,11 @@ public class Outdoor extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		getInitLoc();//获取当前位置 显示地图上
 		mBMapManager = new BMapManager(getApplication());
 		mBMapManager.init(this.getString(R.string.baiduKey), null);
 		mBMapManager.start();
+		
 		
 		setContentView(R.layout.activity_outdoor);
 		
@@ -99,7 +101,7 @@ public class Outdoor extends Activity {
 			Log.d(TAG,"locClient is null or not started");
 		}
 		//setup the map zoom level
-		mMapController.setZoom(18);
+		mMapController.setZoom(16);
 		mMapController.enableClick(true);
 		
 		Button findMe = (Button)findViewById(R.id.locate);
@@ -108,30 +110,11 @@ public class Outdoor extends Activity {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				try {
-
-					LocationManager locationManager;
-					String context = Context.LOCATION_SERVICE;
-					locationManager = (LocationManager) getSystemService(context);
-					// String provider = LocationManager.GPS_PROVIDER;
-
-					Criteria criteria = new Criteria();
-					criteria.setAccuracy(Criteria.ACCURACY_FINE);
-					criteria.setAltitudeRequired(false);
-					criteria.setBearingRequired(false);
-					criteria.setCostAllowed(true);
-					criteria.setPowerRequirement(Criteria.POWER_LOW);
-					String provider = locationManager.getBestProvider(criteria, true);
-					Location location = locationManager.getLastKnownLocation(provider);
-					geoPoint = new GeoPoint((int) (location.getLatitude() * 1e6),
-							(int) (location.getLongitude() * 1e6));
-					mMapController.animateTo(geoPoint);
-					mMapController.setCenter(geoPoint);
-					mMapController.setZoom(20);
-				} catch (Exception e) {
-					// TODO: handle exception
-					Log.d("Location Error:", e.getMessage().toString());
-				}
+				getInitLoc();
+				//mMapView.getOverlays().clear();
+				mMapController.animateTo(geoPoint);
+				mMapController.setCenter(geoPoint);
+				mMapController.setZoom(20);		
 			}
 			
 		});
@@ -190,11 +173,14 @@ public class Outdoor extends Activity {
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 				// TODO Auto-generated method stub
-				String mSelection = parent.getItemAtPosition(position).toString();
-				GeoPoint point =new GeoPoint((int)myLocationOverlay.getMyLocation().latitude, (int)myLocationOverlay.getMyLocation().longitude);
-				mkSearch.poiSearchNearBy("KTV", point, 5000);
+				String mSelection = parent.getItemAtPosition(position).toString();	
+				//Log.d("point..", mLocationData.latitude+"-----"+mLocationData.longitude);
+				GeoPoint point =new GeoPoint((int) (mLocationData.latitude * 1E6),(int) (mLocationData.longitude * 1E6));
+				if (mLocationData.latitude==0.0 || mLocationData.longitude == 0.0) {
+					point = geoPoint;
+				}
+				mkSearch.poiSearchNearBy(mSelection, point, 1000);
 				
-				//此处搜索有问题不能得到相应的兴趣点
 			}
 
 			@Override
@@ -298,8 +284,8 @@ public class Outdoor extends Activity {
 		@Override
 		public void onGetAddrResult(MKAddrInfo arg0, int arg1) {
 			// TODO Auto-generated method stub
-			mMapController.animateTo(arg0.geoPt);  
-			Log.d("onGetAddrResult--------",arg1+"-12-");
+			//mMapController.animateTo(arg0.geoPt);  
+			//Log.d("onGetAddrResult--------",arg1+"-12-");
 		}
 
 		@Override
@@ -323,9 +309,7 @@ public class Outdoor extends Activity {
 		@Override
 		public void onGetPoiResult(MKPoiResult res, int type, int error) {
 			// TODO Auto-generated method stub
-//			PoiOverlay poioverlay = new PoiOverlay(TravtoolActivity.this, mMapView);  
-//            poioverlay.setData(arg0.getAllPoi());  
-//            mMapView.getOverlays().add(poioverlay);
+			
 			if (error != 0 || res == null) {
                 Toast.makeText(Outdoor.this, "抱歉，未找到结果", Toast.LENGTH_LONG).show();
                 return;
@@ -366,25 +350,27 @@ public class Outdoor extends Activity {
 		}
 	}
 	
-//	public class MyPoiOverlay extends PoiOverlay {
-//	    
-//	    MKSearch mSearch;
-//
-//	    public MyPoiOverlay(Activity activity, MapView mapView, MKSearch search) {
-//	        super(activity, mapView);
-//	        mSearch = search;
-//	    }
-//
-//	    @Override
-//	    protected boolean onTap(int i) {
-//	        super.onTap(i);
-//	        MKPoiInfo info = getPoi(i);
-//	        if (info.hasCaterDetails) {
-//	            mSearch.poiDetailSearch(info.uid);
-//	        }
-//	        return true;
-//	    }
-//
-//	    
-//	}
+	private void getInitLoc() {// 初始化时候获取坐标
+		try {
+
+			LocationManager locationManager;
+			String context = Context.LOCATION_SERVICE;
+			locationManager = (LocationManager) getSystemService(context);
+			// String provider = LocationManager.GPS_PROVIDER;
+
+			Criteria criteria = new Criteria();
+			criteria.setAccuracy(Criteria.ACCURACY_FINE);
+			criteria.setAltitudeRequired(false);
+			criteria.setBearingRequired(false);
+			criteria.setCostAllowed(true);
+			criteria.setPowerRequirement(Criteria.POWER_LOW);
+			String provider = locationManager.getBestProvider(criteria, true);
+			Location location = locationManager.getLastKnownLocation(provider);
+			geoPoint = new GeoPoint((int) (location.getLatitude() * 1e6),
+					(int) (location.getLongitude() * 1e6));
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+	}
+
 }
